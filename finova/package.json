@@ -1,0 +1,39 @@
+{
+  "name": "finova",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "email": "email dev --dir emails",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
+  },
+  "dependencies": {
+    "@arcjet/next": "latest",
+    "@clerk/nextjs": "latest",
+    "@google/generative-ai": "latest",
+    "@prisma/client": "latest",
+    "@react-email/components": "latest",
+    "date-fns": "latest",
+    "inngest": "latest",
+    "next": "15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-email": "latest",
+    "resend": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^8",
+    "eslint-config-next": "15.0.0",
+    "prisma": "latest"
+  }
+}
