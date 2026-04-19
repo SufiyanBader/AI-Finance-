@@ -2,12 +2,16 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { request } from "@arcjet/next";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateResilientContent, SUPPORTED_MODELS } from "@/lib/gemini";
 import { db } from "@/lib/prisma";
-import aj from "@/lib/arcjet";
+import { transactionRateLimit, aiRateLimit } from "@/lib/rate-limit";
+import { sanitizeString } from "@/lib/sanitize";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Helper to get user identifier for rate limiting
+async function getRateLimitIdentifier() {
+  const { userId } = await auth();
+  return userId ? `user:${userId}` : null;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,7 +85,7 @@ function calculateNextRecurringDate(startDate, interval) {
 
 /**
  * Creates a new transaction and updates the associated account balance.
- * Rate-limited per user via Arcjet (10 req / hour).
+ * Rate-limited per user via Upstash Redis (10 req / hour).
  *
  * @param {{
  *   type: "INCOME"|"EXPENSE",
@@ -100,19 +104,19 @@ export async function createTransaction(data) {
     const { userId, user } = await getAuthenticatedUser();
 
     // ── Rate limiting ────────────────────────────────────────────────────────
-    const req = await request();
-    const decision = await aj.protect(req, { userId, requested: 1 });
-
-    if (decision.isDenied()) {
-      if (decision.reason.isRateLimit()) {
-        const { remaining, reset } = decision.reason;
-        console.error("[createTransaction] Rate limit exceeded", {
-          remaining,
-          reset,
-        });
-        throw new Error("Too many requests. Please try again later.");
+    if (transactionRateLimit) {
+      const identifier = `user:${userId}`;
+      try {
+        const { success, reset } = await transactionRateLimit.limit(identifier);
+        if (!success) {
+          const waitSeconds = Math.ceil((reset - Date.now()) / 1000);
+          throw new Error(`Too many transactions. Please wait ${waitSeconds} seconds before trying again.`);
+        }
+      } catch (err) {
+        // Re-throw rate-limit rejections; swallow Redis connection errors
+        if (err.message.startsWith("Too many")) throw err;
+        console.error("[createTransaction] Rate limit check failed:", err.message);
       }
-      throw new Error("Request blocked");
     }
 
     // ── Verify account ownership ─────────────────────────────────────────────
@@ -132,9 +136,9 @@ export async function createTransaction(data) {
         data: {
           type: data.type,
           amount: data.amount,
-          description: data.description ?? null,
+          description: data.description ? sanitizeString(data.description) : null,
           date: new Date(data.date),
-          category: data.category,
+          category: sanitizeString(data.category),
           accountId: data.accountId,
           userId: user.id,
           isRecurring: data.isRecurring ?? false,
@@ -155,8 +159,8 @@ export async function createTransaction(data) {
       return transaction;
     });
 
-    revalidatePath("/dashboard");
-    revalidatePath(`/account/${data.accountId}`);
+    revalidatePath("/dashboard", "layout");
+    revalidatePath(`/account/${data.accountId}`, "layout");
 
     return { success: true, data: serializeTransaction(newTransaction) };
   } catch (error) {
@@ -223,6 +227,8 @@ export async function updateTransaction(id, data) {
         where: { id, userId: user.id },
         data: {
           ...data,
+          description: data.description ? sanitizeString(data.description) : undefined,
+          category: data.category ? sanitizeString(data.category) : undefined,
           date: new Date(data.date),
           nextRecurringDate:
             data.isRecurring && data.recurringInterval
@@ -239,9 +245,8 @@ export async function updateTransaction(id, data) {
       return transaction;
     });
 
-    revalidatePath("/dashboard");
-    revalidatePath(`/account/${original.accountId}`);
-
+    revalidatePath("/dashboard", "layout");
+    revalidatePath(`/account/${original.accountId}`, "layout");
     return {
       success: true,
       data: serializeTransaction(updatedTransaction),
@@ -265,9 +270,22 @@ export async function updateTransaction(id, data) {
  */
 export async function scanReceipt(file) {
   try {
-    await getAuthenticatedUser(); // auth guard only – no user data needed
+    const { userId } = await getAuthenticatedUser();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // ── Stricter rate limit for AI features ─────────────────────────────────
+    if (aiRateLimit) {
+      const identifier = `user:${userId}`;
+      try {
+        const { success, reset } = await aiRateLimit.limit(identifier);
+        if (!success) {
+          const waitSeconds = Math.ceil((reset - Date.now()) / 1000);
+          throw new Error(`AI scan limit reached. Please wait ${waitSeconds} seconds.`);
+        }
+      } catch (err) {
+        if (err.message.startsWith("AI scan")) throw err;
+        console.error("[scanReceipt] Rate limit check failed:", err.message);
+      }
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const base64String = Buffer.from(arrayBuffer).toString("base64");
@@ -295,18 +313,20 @@ Only respond with valid JSON in this exact format, no markdown fences:
 If the image is not a receipt, return an empty object: {}
 `.trim();
 
-    const result = await model.generateContent([
-      { inlineData: { data: base64String, mimeType: file.type } },
-      prompt,
-    ]);
+    const rawText = await generateResilientContent(
+      SUPPORTED_MODELS.FLASH,
+      [
+        { inlineData: { data: base64String, mimeType: file.type } },
+        prompt,
+      ]
+    );
 
-    const response = await result.response;
-    const text = response.text();
-    const cleanText = text.replace(/```(?:json)?\n?/g, "").trim();
+    // Strip optional markdown code fences before parsing
+    const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
     try {
       const { amount, date, description, category, merchantName } =
-        JSON.parse(cleanText);
+        JSON.parse(cleaned);
       return { amount, date, description, category, merchantName };
     } catch (parseError) {
       console.error("[scanReceipt] Error parsing JSON:", parseError);

@@ -30,7 +30,7 @@ export default async function AccountPage({ params }) {
         </div>
         <div className="text-right">
           <p className="text-xl sm:text-2xl font-bold">
-            ${parseFloat(account.balance).toFixed(2)}
+            {parseFloat(account.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <p className="text-sm text-muted-foreground">
             {account._count.transactions} Transactions
@@ -43,7 +43,7 @@ export default async function AccountPage({ params }) {
       </Suspense>
 
       <Suspense fallback={<BarLoader width="100%" color="#6366f1" />}>
-        <TransactionTable transactions={transactions} />
+        <TransactionTable transactions={transactions} accountId={id} />
       </Suspense>
     </div>
   );

@@ -31,3 +31,11 @@ export const transactionSchema = z
       });
     }
   });
+
+export const goalSchema = z.object({
+  name: z.string().min(1, "Goal name is required"),
+  targetAmount: z.string().min(1, "Target amount is required"),
+  savedAmount: z.string().optional(),
+  deadline: z.string().optional(),
+  accountId: z.string().optional(),
+});

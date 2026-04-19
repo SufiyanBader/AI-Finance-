@@ -15,6 +15,7 @@ const useFetch = (cb) => {
       const response = await cb(...args);
       setData(response);
       setError(null);
+      return response;
     } catch (err) {
       setError(err);
       toast.error(err.message);

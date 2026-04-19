@@ -65,7 +65,7 @@ export default function CreateAccountDrawer({ children }) {
       reset();
       setOpen(false);
     }
-  }, [newAccount, isLoading]);
+  }, [newAccount, isLoading, reset]);
 
   useEffect(() => {
     if (error) {

@@ -70,7 +70,18 @@ export async function getAccountWithTransactions(accountId) {
       transactions: account.transactions.map(serializeTransaction),
     };
   } catch (error) {
-    throw new Error(error.message);
+    const msg = error.message || "";
+    if (
+      msg.includes("connect") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("Unauthorized") ||
+      msg.includes("User not found")
+    ) {
+      return null;
+    }
+    console.error("[getAccountWithTransactions]", msg);
+    return null;
   }
 }
 
@@ -122,7 +133,7 @@ export async function bulkDeleteTransactions(transactionIds) {
         accountBalanceChanges
       )) {
         await tx.account.update({
-          where: { id: accountId },
+          where: { id: accountId, userId: user.id },
           data: { balance: { increment: balanceChange } },
         });
       }

@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
 import useFetch from "@/hooks/use-fetch";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function BudgetProgress({ initialBudget, currentExpenses }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBudget, setNewBudget] = useState(
     initialBudget?.amount?.toString() ?? ""
   );
+  const { formatCurrency } = useCurrency();
 
   const {
     loading: isLoading,
@@ -101,7 +103,7 @@ export default function BudgetProgress({ initialBudget, currentExpenses }) {
           ) : (
             <p className="text-sm text-muted-foreground mt-1">
               {initialBudget
-                ? `$${currentExpenses.toFixed(2)} of $${initialBudget.amount.toFixed(2)} spent`
+                ? `${formatCurrency(currentExpenses)} of ${formatCurrency(initialBudget.amount)} spent`
                 : "No budget set"}
             </p>
           )}

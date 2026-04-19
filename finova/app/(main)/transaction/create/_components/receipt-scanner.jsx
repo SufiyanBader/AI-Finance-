@@ -29,7 +29,7 @@ export default function ReceiptScanner({ onScanComplete }) {
       onScanComplete(scannedData);
       toast.success("Receipt scanned successfully");
     }
-  }, [scannedData, scanLoading]);
+  }, [scannedData, scanLoading, onScanComplete]);
 
   return (
     <div>

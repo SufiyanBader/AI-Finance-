@@ -69,8 +69,18 @@ export async function getCurrentBudget(accountId) {
         : 0,
     };
   } catch (error) {
+    const msg = error.message || "";
+    if (
+      msg.includes("connect") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("Unauthorized") ||
+      msg.includes("User not found")
+    ) {
+      return { budget: null, currentExpenses: 0 };
+    }
     console.error("[getCurrentBudget] Error fetching budget:", error);
-    throw error;
+    return { budget: null, currentExpenses: 0 };
   }
 }
 

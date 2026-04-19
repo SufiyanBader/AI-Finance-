@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import { createTransaction, updateTransaction } from "@/actions/transaction";
 import useFetch from "@/hooks/use-fetch";
 import ReceiptScanner from "./receipt-scanner";
 import CreateAccountDrawer from "@/components/create-account-drawer";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function AddTransactionForm({
   accounts,
@@ -39,6 +40,7 @@ export default function AddTransactionForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
+  const { formatCurrency } = useCurrency();
 
   const {
     loading: transactionLoading,
@@ -55,10 +57,9 @@ export default function AddTransactionForm({
   const {
     register,
     setValue,
-    watch,
+    control,
     handleSubmit,
     formState: { errors },
-    getValues,
     reset,
   } = useForm({
     resolver: zodResolver(transactionSchema),
@@ -85,13 +86,16 @@ export default function AddTransactionForm({
           },
   });
 
-  const type = watch("type");
-  const isRecurring = watch("isRecurring");
-  const date = watch("date");
+  const type = useWatch({ control, name: "type" });
+  const isRecurring = useWatch({ control, name: "isRecurring" });
+  const date = useWatch({ control, name: "date" });
+  const accountId = useWatch({ control, name: "accountId" });
+  const category = useWatch({ control, name: "category" });
+  const recurringInterval = useWatch({ control, name: "recurringInterval" });
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
-  const handleScanComplete = (scannedData) => {
+  const handleScanComplete = useCallback((scannedData) => {
     if (scannedData.amount) {
       setValue("amount", scannedData.amount.toString());
     }
@@ -104,7 +108,7 @@ export default function AddTransactionForm({
     if (scannedData.category) {
       setValue("category", scannedData.category);
     }
-  };
+  }, [setValue]);
 
   const onSubmit = async (data) => {
     const formData = { ...data, amount: parseFloat(data.amount) };
@@ -119,16 +123,18 @@ export default function AddTransactionForm({
     if (transactionResult?.success && !transactionLoading) {
       toast.success("Transaction created successfully");
       reset();
+      router.refresh(); // bust the Next.js client router cache
       router.push(`/account/${transactionResult.data.accountId}`);
     }
-  }, [transactionResult, transactionLoading]);
+  }, [transactionResult, transactionLoading, reset, router]);
 
   useEffect(() => {
     if (updateResult?.success && !updateLoading) {
       toast.success("Transaction updated successfully");
+      router.refresh(); // bust the Next.js client router cache
       router.push(`/account/${updateResult.data.accountId}`);
     }
-  }, [updateResult, updateLoading]);
+  }, [updateResult, updateLoading, router]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -138,7 +144,7 @@ export default function AddTransactionForm({
       <div className="space-y-1">
         <Label htmlFor="type">Type</Label>
         <Select
-          value={watch("type")}
+          value={type}
           onValueChange={(v) => setValue("type", v)}
         >
           <SelectTrigger>
@@ -174,7 +180,7 @@ export default function AddTransactionForm({
           <Label htmlFor="accountId">Account</Label>
           <div className="flex gap-2">
             <Select
-              value={watch("accountId")}
+              value={accountId}
               onValueChange={(v) => setValue("accountId", v)}
             >
               <SelectTrigger className="flex-1">
@@ -183,7 +189,7 @@ export default function AddTransactionForm({
               <SelectContent>
                 {accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.name} (${parseFloat(account.balance).toFixed(2)})
+                    {account.name} ({formatCurrency(parseFloat(account.balance))})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -206,7 +212,7 @@ export default function AddTransactionForm({
       <div className="space-y-1">
         <Label htmlFor="category">Category</Label>
         <Select
-          value={watch("category")}
+          value={category}
           onValueChange={(v) => setValue("category", v)}
         >
           <SelectTrigger>
@@ -292,7 +298,7 @@ export default function AddTransactionForm({
         <div className="space-y-1">
           <Label>Recurring Interval</Label>
           <Select
-            value={watch("recurringInterval")}
+            value={recurringInterval}
             onValueChange={(v) => setValue("recurringInterval", v)}
           >
             <SelectTrigger>

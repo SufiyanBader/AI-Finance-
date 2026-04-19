@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/prisma";
+import { sanitizeString } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -68,21 +69,24 @@ export async function createAccount(data) {
     const shouldBeDefault =
       existingAccounts.length === 0 ? true : Boolean(data.isDefault);
 
-    // Remove default flag from any existing account before setting a new one
-    if (shouldBeDefault) {
-      await db.account.updateMany({
-        where: { userId: user.id, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
+    const account = await db.$transaction(async (tx) => {
+      // Remove default flag from any existing account before setting a new one
+      if (shouldBeDefault) {
+        await tx.account.updateMany({
+          where: { userId: user.id, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
 
-    const account = await db.account.create({
-      data: {
-        ...data,
-        balance: balanceFloat,
-        userId: user.id,
-        isDefault: shouldBeDefault,
-      },
+      return await tx.account.create({
+        data: {
+          name: sanitizeString(data.name),
+          type: data.type,
+          balance: balanceFloat,
+          isDefault: shouldBeDefault,
+          userId: user.id,
+        },
+      });
     });
 
     revalidatePath("/dashboard");
@@ -115,12 +119,18 @@ export async function getUserAccounts() {
     return accounts.map(serializeTransaction);
   } catch (error) {
     const msg = error.message || "";
-    // Gracefully handle DB unavailability (e.g. no connection in dev)
-    if (msg.includes("connect") || msg.includes("ECONNREFUSED") || msg.includes("Unauthorized") || msg.includes("User not found")) {
+    // Gracefully handle DB unavailability, including ENOTFOUND (incorrect project ref)
+    if (
+      msg.includes("connect") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("Unauthorized") ||
+      msg.includes("User not found")
+    ) {
       return [];
     }
     console.error("[getUserAccounts]", msg);
-    throw new Error("Failed to load accounts. Please try again.");
+    return []; // Return empty instead of throwing to avoid red error screen
   }
 }
 
@@ -172,10 +182,16 @@ export async function getDashboardData() {
     return transactions.map(serializeTransaction);
   } catch (error) {
     const msg = error.message || "";
-    if (msg.includes("connect") || msg.includes("ECONNREFUSED") || msg.includes("Unauthorized") || msg.includes("User not found")) {
+    if (
+      msg.includes("connect") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("Unauthorized") ||
+      msg.includes("User not found")
+    ) {
       return [];
     }
     console.error("[getDashboardData]", msg);
-    throw new Error("Failed to load transactions. Please try again.");
+    return [];
   }
 }

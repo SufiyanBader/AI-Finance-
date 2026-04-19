@@ -10,12 +10,7 @@ import {
   LineChart,
 } from "lucide-react";
 
-export const statsData = [
-  { value: "50K+", label: "Active Users" },
-  { value: "$2B+", label: "Transactions Tracked" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "4.9/5", label: "User Rating" },
-];
+
 
 export const featuresData = [
   {
@@ -77,26 +72,4 @@ export const howItWorksData = [
   },
 ];
 
-export const testimonialsData = [
-  {
-    quote:
-      "Finova completely transformed how I manage my finances. The AI receipt scanner alone saves me hours every month.",
-    author: "James Mitchell",
-    role: "Software Engineer",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-  },
-  {
-    quote:
-      "The budget tracking features are incredibly intuitive. I finally feel in control of my spending habits.",
-    author: "Sarah Thompson",
-    role: "Marketing Director",
-    image: "https://randomuser.me/api/portraits/women/1.jpg",
-  },
-  {
-    quote:
-      "I love how Finova gives me a complete picture of my financial health. The analytics are detailed yet easy to understand.",
-    author: "David Chen",
-    role: "Small Business Owner",
-    image: "https://randomuser.me/api/portraits/men/2.jpg",
-  },
-];
+

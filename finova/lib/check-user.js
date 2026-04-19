@@ -29,19 +29,32 @@ export async function checkUser() {
       .filter(Boolean)
       .join(" ");
 
+    const email = user.emailAddresses?.[0]?.emailAddress;
+    if (!email) {
+      console.error("[checkUser] No email found for Clerk user:", user.id);
+      return null;
+    }
+
     const newUser = await db.user.create({
       data: {
         clerkUserId: user.id,
         name: name || null,
         imageUrl: user.imageUrl ?? null,
-        email: user.emailAddresses[0]?.emailAddress ?? "",
+        email,
       },
     });
 
     return newUser;
   } catch (error) {
-    // Don't crash the app if DB is unavailable — silently return null
-    console.error("[checkUser] Error:", error.message);
+    const msg = error.message || "";
+    // Avoid logging common connection errors to prevent the red overlay in dev mode
+    if (
+      !msg.includes("connect") &&
+      !msg.includes("ECONNREFUSED") &&
+      !msg.includes("ENOTFOUND")
+    ) {
+      console.error("[checkUser] Unexpected Error:", msg);
+    }
     return null;
   }
 }

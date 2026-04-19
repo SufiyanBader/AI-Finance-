@@ -1,12 +1,10 @@
 import { createElement } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateResilientContent, SUPPORTED_MODELS } from "@/lib/gemini";
 import { inngest } from "./client";
 import { db } from "@/lib/prisma";
 import { sendEmail } from "@/actions/send-email";
 // EmailTemplate is authored by Person A – adjust this import if the path differs
 import EmailTemplate from "@/emails/template";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ---------------------------------------------------------------------------
 // Shared Helpers
@@ -121,31 +119,36 @@ async function getMonthlyStats(userId, month) {
  * @returns {Promise<string[]>}
  */
 async function generateFinancialInsights(stats, month) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = `
 Analyze this financial data and provide 3 concise, actionable insights.
 Focus on spending patterns and practical advice.
 Keep it friendly and conversational.
 
 Financial Data for ${month}:
-- Total Income: $${stats.totalIncome}
-- Total Expenses: $${stats.totalExpenses}
-- Net: $${stats.totalIncome - stats.totalExpenses}
-- Expense Categories: ${JSON.stringify(stats.byCategory)}
+- Total Income: $${stats.totalIncome || 0}
+- Total Expenses: $${stats.totalExpenses || 0}
+- Net: $${(stats.totalIncome || 0) - (stats.totalExpenses || 0)}
+- Expense Categories: ${JSON.stringify(stats.byCategory || {})}
 
 Respond ONLY with a JSON array of 3 strings. No markdown, no explanation.
 Example: ["insight 1","insight 2","insight 3"]
 `.trim();
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    const cleanText = text.replace(/```(?:json)?\n?/g, "").trim();
-    return JSON.parse(cleanText);
+    const text = await generateResilientContent(
+      SUPPORTED_MODELS.FLASH,
+      prompt
+    );
+    // Strip markdown fences Gemini sometimes adds around JSON
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    const parsed = JSON.parse(cleaned);
+    if (!Array.isArray(parsed)) throw new Error("Response is not an array");
+    return parsed;
   } catch (error) {
-    console.error("[generateFinancialInsights] Error generating insights:", error);
+    console.error("[generateFinancialInsights] Fallback:", error.message);
     return [
       "Track your largest expense category to find saving opportunities.",
       "Consider setting up a monthly budget to stay on track.",
@@ -179,17 +182,17 @@ export const checkBudgetAlert = inngest.createFunction(
     });
 
     for (const budget of budgets) {
+      // We still need an account name for the email; use default if present
       const defaultAccount = budget.user.accounts[0];
-      if (!defaultAccount) continue;
 
       await step.run(`check-budget-${budget.id}`, async () => {
         const now = new Date();
         const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
 
+        // Count expenses across ALL user accounts, not just the default
         const expenses = await db.transaction.aggregate({
           where: {
             userId: budget.userId,
-            accountId: defaultAccount.id,
             type: "EXPENSE",
             date: { gte: startDate },
           },
@@ -198,7 +201,10 @@ export const checkBudgetAlert = inngest.createFunction(
 
         const totalExpenses = expenses._sum.amount?.toNumber() ?? 0;
         const budgetAmount = budget.amount.toNumber();
-        const percentUsed = (totalExpenses / budgetAmount) * 100;
+        // Guard against division by zero when budget is set to 0
+        const percentUsed = budgetAmount > 0
+          ? (totalExpenses / budgetAmount) * 100
+          : 0;
 
         const shouldAlert =
           percentUsed >= 80 &&
@@ -216,7 +222,8 @@ export const checkBudgetAlert = inngest.createFunction(
                 percentUsed,
                 budgetAmount,
                 totalExpenses,
-                accountName: defaultAccount.name,
+                // Use default account name if available; otherwise generic label
+                accountName: defaultAccount?.name ?? "All Accounts",
               },
             }),
           });
@@ -312,7 +319,7 @@ export const processRecurringTransaction = inngest.createFunction(
           : transaction.amount.toNumber();
 
       const nextDate = calculateNextRecurringDate(
-        new Date(),
+        new Date(transaction.nextRecurringDate),
         transaction.recurringInterval
       );
 
@@ -361,13 +368,16 @@ export const generateMonthlyReports = inngest.createFunction(
   { id: "generate-monthly-reports", name: "Generate Monthly Reports", triggers: [{ cron: "0 0 1 * *" }] },
   async ({ step }) => {
     const users = await step.run("fetch-users", async () => {
-      return await db.user.findMany({ include: { accounts: true } });
+      // Only select the fields we actually need — avoid fetching account data
+      return await db.user.findMany({
+        select: { id: true, email: true, name: true },
+      });
     });
 
     for (const user of users) {
       await step.run(`generate-report-${user.id}`, async () => {
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const now = new Date();
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
         const stats = await getMonthlyStats(user.id, lastMonth);
 

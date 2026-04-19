@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCurrency } from "@/components/currency-provider";
 
 const DATE_RANGES = {
   "1W": { label: "Last Week", days: 7 },
@@ -36,6 +37,7 @@ const DATE_RANGES = {
 
 export default function AccountChart({ transactions }) {
   const [dateRange, setDateRange] = useState("1M");
+  const { formatCurrency, currentCurrency } = useCurrency();
 
   const filteredData = useMemo(() => {
     const range = DATE_RANGES[dateRange];
@@ -77,6 +79,21 @@ export default function AccountChart({ transactions }) {
     );
   }, [filteredData]);
 
+  if (transactions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-semibold">
+            Transaction Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="h-[300px] flex items-center justify-center">
+          <p className="text-muted-foreground">No transactions found for this account.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -101,13 +118,13 @@ export default function AccountChart({ transactions }) {
           <div className="text-center">
             <p className="text-muted-foreground text-xs mb-1">Total Income</p>
             <p className="text-green-600 font-bold text-lg">
-              ${totals.income.toFixed(2)}
+              {formatCurrency(totals.income)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-muted-foreground text-xs mb-1">Total Expenses</p>
             <p className="text-red-600 font-bold text-lg">
-              ${totals.expense.toFixed(2)}
+              {formatCurrency(totals.expense)}
             </p>
           </div>
           <div className="text-center">
@@ -119,7 +136,7 @@ export default function AccountChart({ transactions }) {
                   : "text-red-600"
               }`}
             >
-              ${(totals.income - totals.expense).toFixed(2)}
+              {formatCurrency(totals.income - totals.expense)}
             </p>
           </div>
         </div>
@@ -141,9 +158,9 @@ export default function AccountChart({ transactions }) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => `$${v}`}
+                tickFormatter={(v) => currentCurrency.symbol + v}
               />
-              <Tooltip formatter={(v) => `$${v.toFixed(2)}`} />
+              <Tooltip formatter={(v) => formatCurrency(v ?? 0)} />
               <Legend />
               <Bar
                 dataKey="income"

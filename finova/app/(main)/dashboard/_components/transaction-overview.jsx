@@ -24,6 +24,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useCurrency } from "@/components/currency-provider";
 
 const COLORS = [
   "#6366f1",
@@ -41,6 +42,7 @@ export default function DashboardOverview({ accounts, transactions }) {
   const [selectedAccountId, setSelectedAccountId] = useState(
     accounts.find((a) => a.isDefault)?.id || accounts[0]?.id
   );
+  const { formatCurrency } = useCurrency();
 
   const accountTransactions = transactions.filter(
     (t) => t.accountId === selectedAccountId
@@ -129,7 +131,7 @@ export default function DashboardOverview({ accounts, transactions }) {
                       <ArrowDownRight className="h-4 w-4" />
                     )}
                     <span className="font-medium text-sm">
-                      ${transaction.amount.toFixed(2)}
+                      {formatCurrency(transaction.amount)}
                     </span>
                   </div>
                 </div>
@@ -162,7 +164,7 @@ export default function DashboardOverview({ accounts, transactions }) {
                     outerRadius={80}
                     dataKey="value"
                     label={({ name, value }) =>
-                      `${name}: $${value.toFixed(2)}`
+                      `${name}: ${formatCurrency(value)}`
                     }
                     labelLine={false}
                   >
@@ -173,7 +175,7 @@ export default function DashboardOverview({ accounts, transactions }) {
                       />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

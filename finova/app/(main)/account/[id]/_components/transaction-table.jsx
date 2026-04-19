@@ -52,6 +52,9 @@ import {
 import { bulkDeleteTransactions } from "@/actions/accounts";
 import useFetch from "@/hooks/use-fetch";
 import { categoryColors } from "@/data/categories";
+import ExportButton from "@/components/export-button";
+import ImportButton from "@/components/import-button";
+import { useCurrency } from "@/components/currency-provider";
 
 const RECURRING_INTERVALS = {
   DAILY: "Daily",
@@ -60,8 +63,9 @@ const RECURRING_INTERVALS = {
   YEARLY: "Yearly",
 };
 
-export default function TransactionTable({ transactions }) {
+export default function TransactionTable({ transactions, accountId }) {
   const router = useRouter();
+  const { formatCurrency } = useCurrency();
   const [selectedIds, setSelectedIds] = useState([]);
   const [sortConfig, setSortConfig] = useState({
     field: "date",
@@ -180,7 +184,17 @@ export default function TransactionTable({ transactions }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <ImportButton
+              accountId={accountId}
+              onImportComplete={() => router.refresh()}
+            />
+            <ExportButton
+              transactions={filteredAndSorted}
+              filename={`transactions-${new Date().toISOString().split("T")[0]}.csv`}
+            />
+          </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="All Types" />
@@ -318,7 +332,7 @@ export default function TransactionTable({ transactions }) {
                       ) : (
                         <ArrowDownRight className="h-4 w-4" />
                       )}
-                      ${transaction.amount.toFixed(2)}
+                      {formatCurrency(transaction.amount)}
                     </div>
                   </TableCell>
                   <TableCell>
