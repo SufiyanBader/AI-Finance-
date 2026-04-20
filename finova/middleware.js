@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis/cloudflare";
 
-// Only initialize if env vars exist
-// Prevents build errors
+// Only initialize if env vars exist — prevents errors during build / cold start
 const redis =
   process.env.UPSTASH_REDIS_REST_URL &&
   process.env.UPSTASH_REDIS_REST_TOKEN
@@ -18,7 +17,7 @@ const rateLimiter = redis
   ? new Ratelimit({
       redis,
       limiter: Ratelimit.slidingWindow(100, "1 m"),
-      analytics: true,
+      analytics: false, // analytics:true fires background fetches that can hang the Edge Runtime
       prefix: "finova:global",
     })
   : null;
@@ -34,7 +33,7 @@ const isProtectedRoute = createRouteMatcher([
   "/trips(.*)",
 ]);
 
-// Bot user agents to block
+// Known malicious scanners / scrapers
 const BOT_USER_AGENTS = [
   "sqlmap",
   "nikto",
@@ -53,7 +52,7 @@ const BOT_USER_AGENTS = [
   "dotbot",
 ];
 
-// Allowed legitimate bots
+// Legitimate crawlers that should never be blocked
 const ALLOWED_BOTS = [
   "googlebot",
   "bingbot",
@@ -70,12 +69,7 @@ const ALLOWED_BOTS = [
 function isMaliciousBot(userAgent) {
   if (!userAgent) return false;
   const ua = userAgent.toLowerCase();
-
-  // Allow good bots first
-  const isAllowed = ALLOWED_BOTS.some((bot) => ua.includes(bot));
-  if (isAllowed) return false;
-
-  // Block known bad bots
+  if (ALLOWED_BOTS.some((bot) => ua.includes(bot))) return false;
   return BOT_USER_AGENTS.some((bot) => ua.includes(bot));
 }
 
@@ -91,7 +85,7 @@ function getClientIp(request) {
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for static files
+  // Skip middleware entirely for static assets
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
@@ -106,12 +100,12 @@ export default clerkMiddleware(async (auth, request) => {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  // Block suspicious request patterns
+  // Block common attack patterns
+  // NOTE: .php is intentionally excluded — it false-positives on Next.js RSC URLs
   const url = request.url.toLowerCase();
   const suspiciousPatterns = [
     "wp-admin",
     "wp-login",
-    ".php",
     "xmlrpc",
     "eval(",
     "base64_decode",
@@ -121,22 +115,15 @@ export default clerkMiddleware(async (auth, request) => {
     "exec(",
   ];
 
-  const isSuspicious = suspiciousPatterns.some((pattern) =>
-    url.includes(pattern)
-  );
-
-  if (isSuspicious) {
+  if (suspiciousPatterns.some((p) => url.includes(p))) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  // Global rate limiting by IP
+  // Global IP-based rate limiting
   if (rateLimiter) {
     const ip = getClientIp(request);
-    const identifier = `ip:${ip}`;
-
     try {
-      const { success, remaining, reset } = await rateLimiter.limit(identifier);
-
+      const { success, remaining, reset } = await rateLimiter.limit(`ip:${ip}`);
       if (!success) {
         return new NextResponse(
           JSON.stringify({
@@ -155,14 +142,17 @@ export default clerkMiddleware(async (auth, request) => {
         );
       }
     } catch (error) {
-      // If Redis is down, allow the request
+      // Redis unavailable — allow the request through
       console.error("Rate limit check failed:", error.message);
     }
   }
 
-  // Protect routes - redirect to sign in if not authenticated
+  // Clerk route protection
+  // IMPORTANT: auth() inside clerkMiddleware is synchronous in @clerk/nextjs v6.
+  // Do NOT use `await auth()` — it returns a Promise whose .userId is always undefined,
+  // which would redirect every authenticated user to the sign-in page.
   if (isProtectedRoute(request)) {
-    const authObj = await auth();
+    const authObj = auth();
     if (!authObj.userId) {
       return authObj.redirectToSignIn();
     }
@@ -172,7 +162,5 @@ export default clerkMiddleware(async (auth, request) => {
 });
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
