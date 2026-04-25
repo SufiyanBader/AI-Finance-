@@ -15,6 +15,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { formatPrice } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 const ASSET_TYPE_COLORS = {
   STOCK: "#3b82f6",
@@ -40,6 +41,7 @@ export default function PortfolioCharts({
   allocationByType,
   history,
 }) {
+  const { currencyCode, currentCurrency } = useCurrency();
   const allocationPieData = Object.entries(allocationByType)
     .filter(([_, value]) => value > 0)
     .map(([type, value]) => ({
@@ -87,10 +89,10 @@ export default function PortfolioCharts({
                   />
                   <YAxis
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) => `${currentCurrency.symbol}${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value) => formatPrice(value)}
+                    formatter={(value) => formatPrice(value, null, currencyCode)}
                     labelFormatter={(label) => {
                       const date = new Date(label);
                       return date.toLocaleDateString("en-US", {
@@ -137,7 +139,7 @@ export default function PortfolioCharts({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatPrice(value)} />
+                  <Tooltip formatter={(value) => formatPrice(value, null, currencyCode)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -173,7 +175,7 @@ export default function PortfolioCharts({
                       <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatPrice(value)} />
+                  <Tooltip formatter={(value) => formatPrice(value, null, currencyCode)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -205,7 +207,7 @@ export default function PortfolioCharts({
                         }`}
                       >
                         {h.gainLoss >= 0 ? "+" : ""}
-                        {formatPrice(h.gainLoss)}
+                        {formatPrice(h.gainLoss, null, currencyCode)}
                       </p>
                       <p
                         className={`text-xs ${

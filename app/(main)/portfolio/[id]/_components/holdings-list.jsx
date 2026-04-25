@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { removeHolding } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function HoldingsList({ holdings }) {
+  const { currencyCode } = useCurrency();
   const {
     loading: removeLoading,
     fn: removeFn,
@@ -79,12 +81,12 @@ export default function HoldingsList({ holdings }) {
 
               <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
                 <p>{holding.quantity.toFixed(4)} shares</p>
-                <p>Avg: {formatPrice(holding.averageBuyPrice)}</p>
+                <p>Avg: {formatPrice(holding.averageBuyPrice, null, currencyCode)}</p>
               </div>
 
               <div className="text-right">
-                <p className="font-medium">{formatPrice(holding.currentPrice)}</p>
-                <p className="text-xs">{formatPrice(holding.currentValue)}</p>
+                <p className="font-medium">{formatPrice(holding.currentPrice, null, currencyCode)}</p>
+                <p className="text-xs">{formatPrice(holding.currentValue, null, currencyCode)}</p>
                 <p
                   className={`text-xs font-semibold ${getChangeColor(
                     holding.gainLossPercent

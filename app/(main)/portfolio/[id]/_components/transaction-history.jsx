@@ -4,8 +4,10 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function TransactionHistory({ transactions }) {
+  const { currencyCode } = useCurrency();
   return (
     <Card>
       <CardHeader>
@@ -39,7 +41,7 @@ export default function TransactionHistory({ transactions }) {
 
               <div className="text-center hidden sm:block">
                 <p>
-                  {tx.quantity} @ {formatPrice(tx.price)}
+                  {tx.quantity} @ {formatPrice(tx.price, null, currencyCode)}
                 </p>
                 <p className="text-muted-foreground text-xs">
                   {format(new Date(tx.date), "MMM d, yyyy")}
@@ -47,10 +49,10 @@ export default function TransactionHistory({ transactions }) {
               </div>
 
               <div className="text-right">
-                <p className="font-semibold">{formatPrice(tx.totalAmount)}</p>
+                <p className="font-semibold">{formatPrice(tx.totalAmount, null, currencyCode)}</p>
                 {tx.fees > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Fee: {formatPrice(tx.fees)}
+                    Fee: {formatPrice(tx.fees, null, currencyCode)}
                   </p>
                 )}
                 <p className="text-muted-foreground text-xs sm:hidden">

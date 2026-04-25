@@ -5,8 +5,10 @@ import { TrendingUp, TrendingDown, Briefcase } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioCard({ portfolio }) {
+  const { currencyCode } = useCurrency();
   const isPositive = portfolio.totalGainLoss >= 0;
 
   return (
@@ -47,7 +49,7 @@ export default function PortfolioCard({ portfolio }) {
               Portfolio Value
             </p>
             <p className="text-2xl font-bold">
-              {formatPrice(portfolio.totalValue)}
+              {formatPrice(portfolio.totalValue, null, currencyCode)}
             </p>
           </div>
 
@@ -64,7 +66,7 @@ export default function PortfolioCard({ portfolio }) {
                 ) : (
                   <TrendingDown className="h-4 w-4" />
                 )}
-                <span>{formatPrice(Math.abs(portfolio.totalGainLoss))}</span>
+                <span>{formatPrice(Math.abs(portfolio.totalGainLoss), null, currencyCode)}</span>
               </div>
             </div>
             <div className="text-right">
@@ -84,7 +86,7 @@ export default function PortfolioCard({ portfolio }) {
               <span className="text-muted-foreground">Today</span>
               <span className={getChangeColor(portfolio.totalDayChange)}>
                 {formatPercent(portfolio.totalDayChangePercent)} (
-                {formatPrice(Math.abs(portfolio.totalDayChange))})
+                {formatPrice(Math.abs(portfolio.totalDayChange), null, currencyCode)})
               </span>
             </div>
           </div>

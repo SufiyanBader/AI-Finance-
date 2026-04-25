@@ -16,12 +16,12 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { useCurrency } from "@/components/currency-provider";
+import { createFormatter } from "@/lib/currencies";
 
 export default function GoalCard({ goal, accounts: _accounts }) {
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [addAmount, setAddAmount] = useState("");
-  const { formatCurrency } = useCurrency();
+  const formatCurrency = createFormatter(goal.account?.currency || "USD");
 
   const {
     loading: deleteLoading,

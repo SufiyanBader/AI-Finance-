@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { categoryColors } from "@/data/categories";
 import ExportButton from "@/components/export-button";
+import { createFormatter } from "@/lib/currencies";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function AdvancedSearchPanel({ transactions, accounts: _accounts }) {
@@ -283,7 +284,9 @@ export default function AdvancedSearchPanel({ transactions, accounts: _accounts 
                     </>
                   )}
                 </p>
-                <p className="text-xl font-bold">{formatCurrency(t.amount)}</p>
+                <p className="text-xl font-bold">
+                  {createFormatter(_accounts?.find(a => a.id === t.accountId)?.currency || "USD")(t.amount)}
+                </p>
               </div>
             </div>
           ))}

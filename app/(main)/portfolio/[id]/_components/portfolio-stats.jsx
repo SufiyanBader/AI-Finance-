@@ -3,8 +3,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, BarChart2 } from "lucide-react";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioStats({ metrics }) {
+  const { currencyCode } = useCurrency();
   const isPositive = metrics.totalGainLoss >= 0;
 
   return (
@@ -20,7 +22,7 @@ export default function PortfolioStats({ metrics }) {
                 Total Value
               </p>
               <h3 className="text-2xl font-bold">
-                {formatPrice(metrics.totalValue)}
+                {formatPrice(metrics.totalValue, null, currencyCode)}
               </h3>
             </div>
           </div>
@@ -38,7 +40,7 @@ export default function PortfolioStats({ metrics }) {
                 Total Invested
               </p>
               <h3 className="text-2xl font-bold">
-                {formatPrice(metrics.totalCost)}
+                {formatPrice(metrics.totalCost, null, currencyCode)}
               </h3>
             </div>
           </div>
@@ -69,7 +71,7 @@ export default function PortfolioStats({ metrics }) {
                 )}`}
               >
                 {isPositive ? "+" : "-"}
-                {formatPrice(Math.abs(metrics.totalGainLoss))}
+                {formatPrice(Math.abs(metrics.totalGainLoss), null, currencyCode)}
               </h3>
             </div>
           </div>

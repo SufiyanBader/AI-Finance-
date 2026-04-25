@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { deletePortfolio, refreshPortfolioPrices } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioHeader({ portfolio }) {
+  const { currencyCode } = useCurrency();
   const router = useRouter();
 
   const {
@@ -108,7 +110,7 @@ export default function PortfolioHeader({ portfolio }) {
         <div>
           <p className="text-sm text-muted-foreground">Portfolio Value</p>
           <p className="font-semibold">
-            {formatPrice(portfolio.metrics.totalValue)}
+            {formatPrice(portfolio.metrics.totalValue, null, currencyCode)}
           </p>
         </div>
         <div>
@@ -119,7 +121,7 @@ export default function PortfolioHeader({ portfolio }) {
             )}`}
           >
             {portfolio.metrics.totalGainLoss >= 0 ? "+" : "-"}
-            {formatPrice(Math.abs(portfolio.metrics.totalGainLoss))}
+            {formatPrice(Math.abs(portfolio.metrics.totalGainLoss), null, currencyCode)}
           </p>
         </div>
         <div>
@@ -140,7 +142,7 @@ export default function PortfolioHeader({ portfolio }) {
             )}`}
           >
             {formatPercent(portfolio.metrics.totalDayChangePercent)} (
-            {formatPrice(Math.abs(portfolio.metrics.totalDayChange))})
+            {formatPrice(Math.abs(portfolio.metrics.totalDayChange), null, currencyCode)})
           </p>
         </div>
       </div>

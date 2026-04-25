@@ -3,8 +3,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Wallet } from "lucide-react";
 import { formatPrice } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function NetWorthBanner({ data }) {
+  const { currencyCode } = useCurrency();
   if (!data) return null;
 
   const cashPercent =
@@ -21,7 +23,7 @@ export default function NetWorthBanner({ data }) {
               Total Net Worth
             </p>
             <p className="text-4xl md:text-5xl font-bold">
-              {formatPrice(data.netWorth)}
+              {formatPrice(data.netWorth, null, currencyCode)}
             </p>
             <p className="text-blue-200 text-sm mt-2">
               Across {data.accounts.length} accounts and{" "}
@@ -35,7 +37,7 @@ export default function NetWorthBanner({ data }) {
                 <Wallet className="h-4 w-4 text-blue-200" />
                 <span className="text-blue-200 text-xs">Cash</span>
               </div>
-              <p className="text-xl font-bold">{formatPrice(data.cashTotal)}</p>
+              <p className="text-xl font-bold">{formatPrice(data.cashTotal, null, currencyCode)}</p>
               <p className="text-blue-200 text-xs mt-1">
                 {cashPercent.toFixed(1)}% of net worth
               </p>
@@ -47,7 +49,7 @@ export default function NetWorthBanner({ data }) {
                 <span className="text-blue-200 text-xs">Investments</span>
               </div>
               <p className="text-xl font-bold">
-                {formatPrice(data.investmentsTotal)}
+                {formatPrice(data.investmentsTotal, null, currencyCode)}
               </p>
               <p className="text-blue-200 text-xs mt-1">
                 {investPercent.toFixed(1)}% of net worth

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { Briefcase, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPrice } from "@/lib/market-data";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioSummaryCard({ data }) {
+  const { currencyCode } = useCurrency();
   if (!data) return null;
 
   return (
@@ -17,7 +19,7 @@ export default function PortfolioSummaryCard({ data }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{formatPrice(data.investmentsTotal)}</div>
+        <div className="text-2xl font-bold">{formatPrice(data.investmentsTotal, null, currencyCode)}</div>
         <p className="text-xs text-muted-foreground mt-1">
           {data.portfolioSummary.length} active portfolios
         </p>
