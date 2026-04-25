@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
+
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 32 },
@@ -192,13 +192,12 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="relative h-64 md:h-96 bg-gradient-to-br from-emerald-500/10 via-transparent to-violet-500/10 rounded-xl flex items-center justify-center overflow-hidden">
-             <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/dashboard-preview.png"
               alt="Dashboard Preview"
-              fill
-              className="object-contain rounded-lg shadow-2xl p-2"
-              priority
-              />
+              className="w-full h-full object-contain rounded-lg"
+            />
           </div>
         </motion.div>
       </section>
