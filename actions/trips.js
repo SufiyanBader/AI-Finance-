@@ -108,7 +108,8 @@ export async function createTrip(data) {
       },
     };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[createTrip]", error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -155,7 +156,8 @@ export async function getTrips() {
       };
     });
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[getTrips]", error.message);
+    return [];
   }
 }
 
@@ -261,7 +263,7 @@ export async function getTripById(tripId) {
       },
     };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[getTripById]", error.message); return null;
   }
 }
 
@@ -309,7 +311,8 @@ export async function addTripExpense(tripId, data) {
 
     return { success: true, data: serializeExpense(expense) };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[addTripExpense]", error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -333,7 +336,7 @@ export async function deleteTripExpense(expenseId) {
 
     return { success: true };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[deleteTripExpense]", error.message); return { success: false, error: error.message };
   }
 }
 
@@ -356,7 +359,7 @@ export async function deleteTrip(tripId) {
 
     return { success: true };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[deleteTrip]", error.message); return { success: false, error: error.message };
   }
 }
 
@@ -386,7 +389,7 @@ export async function completeTrip(tripId) {
 
     return { success: true };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[completeTrip]", error.message); return { success: false, error: error.message };
   }
 }
 

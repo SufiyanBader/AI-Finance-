@@ -13,8 +13,16 @@ const useFetch = (cb) => {
     setError(null);
     try {
       const response = await cb(...args);
-      setData(response);
-      setError(null);
+      // Handle graceful server action errors returned as { success: false, error }
+      if (response && response.success === false && response.error) {
+        const err = new Error(response.error);
+        setError(err);
+        toast.error(response.error);
+        setData(undefined);
+      } else {
+        setData(response);
+        setError(null);
+      }
       return response;
     } catch (err) {
       setError(err);
