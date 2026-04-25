@@ -144,7 +144,8 @@ export async function getPortfolios() {
 
     return result;
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[getPortfolios]", error.message);
+    return [];
   }
 }
 
@@ -479,7 +480,8 @@ export async function getNetWorth() {
       })),
     };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("[getNetWorth]", error.message);
+    return { cashTotal: 0, investmentsTotal: 0, netWorth: 0, accounts: [], portfolioSummary: [] };
   }
 }
 

@@ -28,9 +28,9 @@ import PortfolioSummaryCard from "./_components/portfolio-summary-card";
 // Inner async component — loads accounts + budget in parallel where possible
 async function DashboardContent() {
   const [accounts, transactions, netWorth] = await Promise.all([
-    getUserAccounts(),
-    getDashboardData(),
-    getNetWorth(),
+    getUserAccounts().catch(() => []),
+    getDashboardData().catch(() => []),
+    getNetWorth().catch(() => null),
   ]);
 
   const defaultAccount = accounts?.find((account) => account.isDefault);
