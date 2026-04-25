@@ -10,6 +10,7 @@ const isProtectedRoute = createRouteMatcher([
   "/search(.*)",
   "/onboarding(.*)",
   "/trips(.*)",
+  "/portfolio(.*)",
 ]);
 
 const suspiciousPatterns = [

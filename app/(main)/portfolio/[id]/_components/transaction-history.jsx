@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/market-data";
+import { formatPrice } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function TransactionHistory({ transactions }) {

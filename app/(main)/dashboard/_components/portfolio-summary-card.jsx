@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Briefcase, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPrice } from "@/lib/market-data";
+import { formatPrice } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioSummaryCard({ data }) {

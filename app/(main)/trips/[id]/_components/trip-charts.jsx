@@ -20,7 +20,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, getCurrencySymbol } from "@/lib/formatters";
 
 const CHART_COLORS = [
   "#6366f1",
@@ -145,7 +145,7 @@ export default function TripCharts({
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v) => "$" + v}
+                    tickFormatter={(v) => getCurrencySymbol(baseCurrency) + v}
                   />
                   <Tooltip
                     formatter={(v) => [

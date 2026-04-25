@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, BarChart2 } from "lucide-react";
-import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioStats({ metrics }) {

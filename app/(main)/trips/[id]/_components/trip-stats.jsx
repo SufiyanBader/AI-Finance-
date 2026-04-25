@@ -9,7 +9,7 @@ import {
   TrendingDown,
   AlertTriangle,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function TripStats({ stats, baseCurrency }) {
   const statCards = [

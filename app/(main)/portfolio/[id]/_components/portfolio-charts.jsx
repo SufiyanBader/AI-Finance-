@@ -14,7 +14,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { formatPrice } from "@/lib/market-data";
+import { formatPrice } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 const ASSET_TYPE_COLORS = {
@@ -89,7 +89,11 @@ export default function PortfolioCharts({
                   />
                   <YAxis
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `${currentCurrency.symbol}${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `${currentCurrency.symbol}${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `${currentCurrency.symbol}${(value / 1000).toFixed(0)}k`;
+                      return `${currentCurrency.symbol}${value}`;
+                    }}
                   />
                   <Tooltip
                     formatter={(value) => formatPrice(value, null, currencyCode)}

@@ -11,7 +11,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function TripCard({ trip }) {
   const budgetPercent = trip.budget

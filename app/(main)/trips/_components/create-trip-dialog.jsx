@@ -25,7 +25,7 @@ import {
 import { tripSchema } from "@/lib/trip-schema";
 import { createTrip } from "@/actions/trips";
 import useFetch from "@/hooks/use-fetch";
-import { SUPPORTED_CURRENCIES } from "@/lib/currency";
+import { SUPPORTED_CURRENCIES } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 const COVER_COLORS = [

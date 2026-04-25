@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TrendingUp, TrendingDown, Briefcase } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioCard({ portfolio }) {

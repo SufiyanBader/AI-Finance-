@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { deleteTrip, completeTrip } from "@/actions/trips";
 import useFetch from "@/hooks/use-fetch";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function TripHeader({ trip }) {
   const router = useRouter();

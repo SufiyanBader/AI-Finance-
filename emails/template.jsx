@@ -11,6 +11,7 @@ import {
   Row,
   Column,
 } from "@react-email/components";
+import { CURRENCIES } from "@/lib/currencies";
 
 // ─── Inline styles (React Email works best with plain objects) ───────────────
 
@@ -140,14 +141,16 @@ const footer = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Formats a number as USD currency string.
+ * Formats a number as a locale-aware currency string.
  * @param {number} n
+ * @param {string} currencyCode
  * @returns {string}
  */
-function usd(n) {
-  return new Intl.NumberFormat("en-US", {
+function formatCurrency(n, currencyCode = "USD") {
+  const currency = CURRENCIES.find((c) => c.code === currencyCode) ?? CURRENCIES[0];
+  return new Intl.NumberFormat(currency.locale, {
     style: "currency",
-    currency: "USD",
+    currency: currency.code,
     minimumFractionDigits: 2,
   }).format(n);
 }
@@ -225,7 +228,7 @@ function BudgetAlertEmail({ userName, data }) {
             <Section style={alertBox(pct)}>
               <Text style={alertHeading(pct)}>{statusLabel}</Text>
               <Text style={{ fontSize: "14px", color: "#4b5563", margin: 0 }}>
-                {usd(totalExpenses)} spent of {usd(budgetAmount)} budget
+                {formatCurrency(totalExpenses, data.currencyCode)} spent of {formatCurrency(budgetAmount, data.currencyCode)} budget
               </Text>
 
               {/* Progress bar */}
@@ -256,12 +259,12 @@ function BudgetAlertEmail({ userName, data }) {
               <Row>
                 <Column>
                   <Text style={statLabel}>Budget</Text>
-                  <Text style={statValue}>{usd(budgetAmount)}</Text>
+                  <Text style={statValue}>{formatCurrency(budgetAmount, data.currencyCode)}</Text>
                 </Column>
                 <Column>
                   <Text style={statLabel}>Spent</Text>
                   <Text style={{ ...statValue, color: "#dc2626" }}>
-                    {usd(totalExpenses)}
+                    {formatCurrency(totalExpenses, data.currencyCode)}
                   </Text>
                 </Column>
                 <Column>
@@ -272,7 +275,7 @@ function BudgetAlertEmail({ userName, data }) {
                       color: remaining >= 0 ? "#16a34a" : "#dc2626",
                     }}
                   >
-                    {usd(Math.abs(remaining))}
+                    {formatCurrency(Math.abs(remaining), data.currencyCode)}
                     {remaining < 0 ? " over" : ""}
                   </Text>
                 </Column>
@@ -310,7 +313,7 @@ function MonthlyReportEmail({ userName, data }) {
       <Head />
       <Preview>
         Your {month} financial report — Net {isPositive ? "+" : ""}
-        {usd(net)}
+        {formatCurrency(net, data.currencyCode)}
       </Preview>
       <Body style={main}>
         <Container style={container}>
@@ -334,13 +337,13 @@ function MonthlyReportEmail({ userName, data }) {
                 <Column>
                   <Text style={statLabel}>Income</Text>
                   <Text style={{ ...statValue, color: "#16a34a" }}>
-                    {usd(stats.totalIncome)}
+                    {formatCurrency(stats.totalIncome, data.currencyCode)}
                   </Text>
                 </Column>
                 <Column>
                   <Text style={statLabel}>Expenses</Text>
                   <Text style={{ ...statValue, color: "#dc2626" }}>
-                    {usd(stats.totalExpenses)}
+                    {formatCurrency(stats.totalExpenses, data.currencyCode)}
                   </Text>
                 </Column>
                 <Column>
@@ -352,7 +355,7 @@ function MonthlyReportEmail({ userName, data }) {
                     }}
                   >
                     {isPositive ? "+" : ""}
-                    {usd(net)}
+                    {formatCurrency(net, data.currencyCode)}
                   </Text>
                 </Column>
               </Row>
@@ -415,7 +418,7 @@ function MonthlyReportEmail({ userName, data }) {
                             margin: 0,
                           }}
                         >
-                          {usd(amount)}
+                          {formatCurrency(amount, data.currencyCode)}
                         </Text>
                       </Column>
                     </Row>

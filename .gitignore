@@ -24,6 +24,16 @@ prisma/migrations/
 Thumbs.db
 *.pem
 *.log
+*-out.txt
+*_error.txt
+build-output.txt
+gen.log
+generate.log
+init.log
+install.log
+prisma-out.txt
+prisma_error.txt
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

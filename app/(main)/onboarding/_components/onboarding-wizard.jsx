@@ -163,7 +163,7 @@ export default function OnboardingWizard() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Initial Balance ($)</Label>
+                  <Label>Initial Balance</Label>
                   <Input type="number" step="0.01" placeholder="0.00" {...step1Form.register("initialBalance")} />
                   {step1Form.formState.errors.initialBalance && (
                     <p className="text-sm text-destructive">{step1Form.formState.errors.initialBalance.message}</p>
@@ -192,7 +192,7 @@ export default function OnboardingWizard() {
             <CardContent>
               <form onSubmit={step2Form.handleSubmit(onStep2Submit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Monthly Budget ($)</Label>
+                  <Label>Monthly Budget</Label>
                   <Input type="number" step="0.01" placeholder="e.g., 2000.00" {...step2Form.register("monthlyBudget")} />
                 </div>
 

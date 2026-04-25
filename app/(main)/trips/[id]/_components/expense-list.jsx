@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { deleteTripExpense } from "@/actions/trips";
 import useFetch from "@/hooks/use-fetch";
-import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
+import { formatCurrency, getCurrencySymbol } from "@/lib/formatters";
 
 export default function ExpenseList({ expenses, tripId: _tripId, baseCurrency }) {
   const [searchTerm, setSearchTerm] = useState("");

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { removeHolding } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
-import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function HoldingsList({ holdings }) {

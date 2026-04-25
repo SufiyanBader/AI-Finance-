@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Wallet } from "lucide-react";
-import { formatPrice } from "@/lib/market-data";
+import { formatPrice } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function NetWorthBanner({ data }) {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { deletePortfolio, refreshPortfolioPrices } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
-import { formatPrice, formatPercent, getChangeColor } from "@/lib/market-data";
+import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
 export default function PortfolioHeader({ portfolio }) {

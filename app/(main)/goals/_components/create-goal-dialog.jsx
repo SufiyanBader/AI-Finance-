@@ -91,7 +91,7 @@ export default function CreateGoalDialog({ accounts }) {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="targetAmount">Target Amount ($)</Label>
+            <Label htmlFor="targetAmount">Target Amount</Label>
             <Input
               id="targetAmount"
               type="number"

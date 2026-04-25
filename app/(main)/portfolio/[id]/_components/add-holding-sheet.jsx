@@ -28,7 +28,7 @@ import {
 import { holdingSchema } from "@/lib/portfolio-schema";
 import { addHolding, searchAssets } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
-import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/market-data";
+import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/constants";
 
 export default function AddHoldingSheet({ portfolioId }) {
   const [open, setOpen] = useState(false);

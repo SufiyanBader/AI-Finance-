@@ -159,7 +159,7 @@ export default function AccountChart({ transactions, currency: currencyCode }) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v) => currency.symbol + v}
+                tickFormatter={(v) => formatCurrency(v)}
               />
               <Tooltip formatter={(v) => formatCurrency(v ?? 0)} />
               <Legend />

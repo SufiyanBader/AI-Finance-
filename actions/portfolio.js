@@ -6,8 +6,8 @@ import { revalidatePath } from "next/cache";
 import {
   getAssetPrice,
   getBulkPrices,
-  calculatePortfolioMetrics,
 } from "@/lib/market-data";
+import { calculatePortfolioMetrics } from "@/lib/formatters";
 
 function serializeDecimal(obj) {
   const result = { ...obj };
@@ -483,7 +483,7 @@ export async function getNetWorth() {
   }
 }
 
-import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/market-data";
+import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/constants";
 
 export async function searchAssets(query, type) {
   try {

@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { tripExpenseSchema } from "@/lib/trip-schema";
 import { addTripExpense, getExchangeRatePreview } from "@/actions/trips";
 import useFetch from "@/hooks/use-fetch";
-import { SUPPORTED_CURRENCIES, formatCurrency } from "@/lib/currency";
+import { SUPPORTED_CURRENCIES, formatCurrency } from "@/lib/formatters";
 
 const TRIP_CATEGORIES = [
   { id: "accommodation", name: "Accommodation" },
