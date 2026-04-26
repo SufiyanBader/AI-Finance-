@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { sendChatMessage } from "@/actions/chat";
 import useFetch from "@/hooks/use-fetch";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function ChatWidget() {
+  const { currencyCode, currentCurrency } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -50,7 +52,7 @@ export default function ChatWidget() {
     const messageToSend = inputValue.trim();
     setInputValue("");
 
-    const result = await sendMessage(messageToSend, history);
+    const result = await sendMessage(messageToSend, history, currencyCode);
 
     if (result?.success) {
       setMessages((prev) => [

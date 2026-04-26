@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, DollarSign, BarChart2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, BarChart2 } from "lucide-react";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
@@ -15,7 +15,7 @@ export default function PortfolioStats({ metrics }) {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 rounded-full">
-              <DollarSign className="h-6 w-6 text-blue-600" />
+              <Wallet className="h-6 w-6 text-blue-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">

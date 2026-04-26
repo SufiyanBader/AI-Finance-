@@ -10,6 +10,15 @@ import useFetch from "@/hooks/use-fetch";
 import { formatPrice, formatPercent, getChangeColor } from "@/lib/formatters";
 import { useCurrency } from "@/components/currency-provider";
 
+/** Returns the unit label based on asset type and symbol. */
+function getQuantityUnit(assetType, symbol) {
+  if (assetType !== "MANUAL") return "shares";
+  const sym = (symbol || "").toUpperCase();
+  if (sym.includes("GOLD")) return "g";
+  if (sym.includes("SILVER")) return "g";
+  return "units";
+}
+
 export default function HoldingsList({ holdings }) {
   const { currencyCode } = useCurrency();
   const {
@@ -80,7 +89,7 @@ export default function HoldingsList({ holdings }) {
               </div>
 
               <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
-                <p>{holding.quantity.toFixed(4)} shares</p>
+                <p>{holding.quantity.toFixed(4)} {getQuantityUnit(holding.assetType, holding.symbol)}</p>
                 <p>Avg: {formatPrice(holding.averageBuyPrice, null, currencyCode)}</p>
               </div>
 

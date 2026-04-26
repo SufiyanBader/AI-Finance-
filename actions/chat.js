@@ -3,8 +3,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { sendResilientChat, SUPPORTED_MODELS } from "@/lib/gemini";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/lib/currencies";
 
-export async function sendChatMessage(message, conversationHistory) {
+export async function sendChatMessage(message, conversationHistory, currencyCode) {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
@@ -13,6 +14,21 @@ export async function sendChatMessage(message, conversationHistory) {
       where: { clerkUserId: userId },
     });
     if (!user) throw new Error("User not found");
+
+    // Resolve the active currency – widget passes its context code;
+    // fall back to the user's primary account currency, then USD.
+    const primaryAccount = await db.account.findFirst({
+      where: { userId: user.id, isDefault: true },
+      select: { currency: true },
+    });
+    const resolvedCode =
+      currencyCode ||
+      primaryAccount?.currency ||
+      DEFAULT_CURRENCY;
+    const currency =
+      CURRENCIES.find((c) => c.code === resolvedCode) ??
+      CURRENCIES.find((c) => c.code === DEFAULT_CURRENCY);
+    const symbol = currency.symbol;
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
@@ -44,7 +60,7 @@ export async function sendChatMessage(message, conversationHistory) {
     const topCategories = Object.entries(byCategory)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
-      .map(([cat, amt]) => `${cat}: $${amt.toFixed(2)}`)
+      .map(([cat, amt]) => `${cat}: ${symbol}${amt.toFixed(2)}`)
       .join(", ");
 
     const systemPrompt = `
@@ -54,9 +70,9 @@ export async function sendChatMessage(message, conversationHistory) {
       User: ${user.name || "User"}
       
       Financial Summary (Last 90 Days):
-      - Total Income: $${totalIncome.toFixed(2)}
-      - Total Expenses: $${totalExpenses.toFixed(2)}
-      - Net Savings: $${(totalIncome - totalExpenses).toFixed(2)}
+      - Total Income: ${symbol}${totalIncome.toFixed(2)}
+      - Total Expenses: ${symbol}${totalExpenses.toFixed(2)}
+      - Net Savings: ${symbol}${(totalIncome - totalExpenses).toFixed(2)}
       - Top Expense Categories: ${topCategories}
       - Total Transactions: ${transactions.length}
       
@@ -65,7 +81,7 @@ export async function sendChatMessage(message, conversationHistory) {
         .slice(0, 10)
         .map(
           (t) =>
-            `${t.date.toISOString().split("T")[0]} | ${t.type} | $${t.amount.toNumber().toFixed(2)} | ${t.category} | ${t.description || "No description"}`
+            `${t.date.toISOString().split("T")[0]} | ${t.type} | ${symbol}${t.amount.toNumber().toFixed(2)} | ${t.category} | ${t.description || "No description"}`
         )
         .join("\n")}
       
@@ -74,7 +90,7 @@ export async function sendChatMessage(message, conversationHistory) {
       - Give specific numbers when available
       - Be concise, friendly, and actionable
       - If asked something outside your data, say so honestly
-      - Format currency as USD with 2 decimal places
+      - Format all currency amounts in ${currency.name} (${resolvedCode}) using the symbol ${symbol}
       - Keep responses under 150 words unless detail is needed
     `.trim();
 

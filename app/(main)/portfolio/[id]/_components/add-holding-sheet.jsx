@@ -29,8 +29,19 @@ import { holdingSchema } from "@/lib/portfolio-schema";
 import { addHolding, searchAssets } from "@/actions/portfolio";
 import useFetch from "@/hooks/use-fetch";
 import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/constants";
+import { useCurrency } from "@/components/currency-provider";
+
+/** Returns the unit label for the quantity field based on asset type + symbol. */
+function getQuantityUnit(assetType, symbol) {
+  if (assetType !== "MANUAL") return "shares";
+  const sym = (symbol || "").toUpperCase();
+  if (sym === "GOLD" || sym.includes("GOLD")) return "g (grams)";
+  if (sym === "SILVER" || sym.includes("SILVER")) return "g (grams)";
+  return "units";
+}
 
 export default function AddHoldingSheet({ portfolioId }) {
+  const { currentCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -273,12 +284,19 @@ export default function AddHoldingSheet({ portfolioId }) {
             )}
 
             <div className="space-y-2">
-              <Label>Quantity</Label>
+              <Label>
+                Quantity
+                {watchedType === "MANUAL" && (
+                  <span className="ml-1 text-xs text-muted-foreground font-normal">
+                    ({getQuantityUnit(watchedType, watch("symbol"))})
+                  </span>
+                )}
+              </Label>
               <Input
                 type="number"
                 step="any"
                 min="0.000001"
-                placeholder="e.g., 10"
+                placeholder={watchedType === "MANUAL" && (watch("symbol") || "").toUpperCase().includes("GOLD") ? "e.g., 10 (grams)" : "e.g., 10"}
                 {...register("quantity")}
               />
               {errors.quantity && (
@@ -287,16 +305,22 @@ export default function AddHoldingSheet({ portfolioId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Average Buy Price (USD)</Label>
+              <Label>
+                Average Buy Price
+                <span className="ml-1 text-xs text-muted-foreground font-normal">
+                  ({currentCurrency.code} – {currentCurrency.symbol})
+                </span>
+              </Label>
               <Input
                 type="number"
                 step="any"
                 min="0"
-                placeholder="e.g., 150.00"
+                placeholder={`e.g., 150.00 (${currentCurrency.symbol})`}
                 {...register("averageBuyPrice")}
               />
               <p className="text-xs text-muted-foreground">
-                Enter the average price you paid per unit
+                Enter the average price you paid per{" "}
+                {getQuantityUnit(watchedType, watch("symbol"))}
               </p>
               {errors.averageBuyPrice && (
                 <p className="text-sm text-red-500">
