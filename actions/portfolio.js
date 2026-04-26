@@ -8,6 +8,38 @@ import {
   getBulkPrices,
 } from "@/lib/market-data";
 import { calculatePortfolioMetrics } from "@/lib/formatters";
+import { getExchangeRate } from "@/lib/currency";
+
+// Helper to enrich holdings with currency conversion
+async function enrichHoldingsWithCurrency(holdings, priceMap, baseCurrency) {
+  return await Promise.all(
+    holdings.map(async (h) => {
+      const priceData = priceMap.get(h.symbol) || {
+        price: 0,
+        change: 0,
+        changePercent: 0,
+        currency: "USD",
+      };
+
+      let rate = 1;
+      const assetCurrency = priceData.currency || "USD";
+      
+      // If asset is not MANUAL and its native currency differs from user's base currency
+      if (h.assetType !== "MANUAL" && assetCurrency !== baseCurrency) {
+        rate = await getExchangeRate(assetCurrency, baseCurrency);
+      }
+
+      return {
+        ...h,
+        quantity: h.quantity.toNumber(),
+        averageBuyPrice: h.averageBuyPrice.toNumber(),
+        currentPrice: priceData.price * rate,
+        change: priceData.change * rate,
+        changePercent: priceData.changePercent,
+      };
+    })
+  );
+}
 
 function serializeDecimal(obj) {
   const result = { ...obj };
@@ -80,6 +112,11 @@ export async function getPortfolios() {
 
     if (!user) throw new Error("User not found");
 
+    const defaultAccount = await db.account.findFirst({
+      where: { userId: user.id, isDefault: true },
+    });
+    const baseCurrency = defaultAccount ? defaultAccount.currency : "USD";
+
     const portfolios = await db.portfolio.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -106,24 +143,15 @@ export async function getPortfolios() {
     // Fetch all prices in one go
     const priceMap = await getBulkPrices(allAssets);
 
-    const result = portfolios.map((p) => {
-      const enrichedHoldings = p.holdings.map((h) => {
-        const priceData = priceMap.get(h.symbol) || {
-          price: 0,
-          change: 0,
-          changePercent: 0,
-        };
-        return {
-          ...h,
-          quantity: h.quantity.toNumber(),
-          averageBuyPrice: h.averageBuyPrice.toNumber(),
-          currentPrice: priceData.price,
-          change: priceData.change,
-          changePercent: priceData.changePercent,
-        };
-      });
+    const result = await Promise.all(
+      portfolios.map(async (p) => {
+        const enrichedHoldings = await enrichHoldingsWithCurrency(
+          p.holdings,
+          priceMap,
+          baseCurrency
+        );
 
-      const metrics = calculatePortfolioMetrics(enrichedHoldings);
+        const metrics = calculatePortfolioMetrics(enrichedHoldings);
 
       return {
         id: p.id,
@@ -140,9 +168,10 @@ export async function getPortfolios() {
         totalDayChangePercent: metrics.totalDayChangePercent,
         holdings: p.holdings.map(serializeHolding),
       };
-    });
+    })
+  );
 
-    return result;
+  return result;
   } catch (error) {
     console.error("[getPortfolios]", error.message);
     return [];
@@ -159,6 +188,11 @@ export async function getPortfolioById(portfolioId) {
     });
 
     if (!user) throw new Error("User not found");
+
+    const defaultAccount = await db.account.findFirst({
+      where: { userId: user.id, isDefault: true },
+    });
+    const baseCurrency = defaultAccount ? defaultAccount.currency : "USD";
 
     const portfolio = await db.portfolio.findUnique({
       where: {
@@ -184,21 +218,11 @@ export async function getPortfolioById(portfolioId) {
 
     const priceMap = await getBulkPrices(assets);
 
-    const enrichedHoldings = portfolio.holdings.map((h) => {
-      const priceData = priceMap.get(h.symbol) || {
-        price: 0,
-        change: 0,
-        changePercent: 0,
-      };
-      return {
-        ...h,
-        quantity: h.quantity.toNumber(),
-        averageBuyPrice: h.averageBuyPrice.toNumber(),
-        currentPrice: priceData.price,
-        change: priceData.change,
-        changePercent: priceData.changePercent,
-      };
-    });
+    const enrichedHoldings = await enrichHoldingsWithCurrency(
+      portfolio.holdings,
+      priceMap,
+      baseCurrency
+    );
 
     const metrics = calculatePortfolioMetrics(enrichedHoldings);
 
