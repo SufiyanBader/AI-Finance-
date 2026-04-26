@@ -485,7 +485,8 @@ export async function getNetWorth() {
   }
 }
 
-import { POPULAR_STOCKS, POPULAR_INDIAN_STOCKS, POPULAR_CRYPTO } from "@/lib/constants";
+import { POPULAR_STOCKS, POPULAR_CRYPTO } from "@/lib/constants";
+import { searchIndianStocks } from "@/lib/market-data";
 
 export async function searchAssets(query, type) {
   try {
@@ -494,39 +495,45 @@ export async function searchAssets(query, type) {
 
     const lowerQuery = query.toLowerCase();
 
-    let results = [];
+    // Run US stock search (local list) and Indian stock search (live API) in parallel
+    const [usStockResults, indianResults, cryptoResults] = await Promise.all([
+      // ── US Stocks (local curated list) ──────────────────────────────────
+      (type === "STOCK" || type === "ETF" || type === "ALL")
+        ? Promise.resolve(
+            POPULAR_STOCKS
+              .filter(
+                (s) =>
+                  s.symbol.toLowerCase().includes(lowerQuery) ||
+                  s.name.toLowerCase().includes(lowerQuery)
+              )
+              .map((s) => ({ ...s, assetType: "STOCK", exchange: "US" }))
+          )
+        : Promise.resolve([]),
 
-    if (type === "STOCK" || type === "ETF" || type === "ALL") {
-      // Search US stocks
-      const stockResults = POPULAR_STOCKS.filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(lowerQuery) ||
-          s.name.toLowerCase().includes(lowerQuery)
-      ).map((s) => ({ ...s, assetType: "STOCK", exchange: "US" }));
+      // ── Indian NSE/BSE Stocks (live Twelve Data symbol_search) ──────────
+      (type === "STOCK" || type === "ETF" || type === "ALL")
+        ? searchIndianStocks(query)
+        : Promise.resolve([]),
 
-      // Search Indian NSE stocks
-      const indianResults = POPULAR_INDIAN_STOCKS.filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(lowerQuery) ||
-          // Also match without .NS suffix (e.g. "tcs" matches "TCS.NS")
-          s.symbol.replace(".NS", "").toLowerCase().includes(lowerQuery) ||
-          s.name.toLowerCase().includes(lowerQuery)
-      ).map((s) => ({ ...s, assetType: "STOCK", exchange: "NSE" }));
+      // ── Crypto (local list) ─────────────────────────────────────────────
+      (type === "CRYPTO" || type === "ALL")
+        ? Promise.resolve(
+            POPULAR_CRYPTO
+              .filter(
+                (c) =>
+                  c.symbol.toLowerCase().includes(lowerQuery) ||
+                  c.name.toLowerCase().includes(lowerQuery)
+              )
+              .map((c) => ({ ...c, assetType: "CRYPTO" }))
+          )
+        : Promise.resolve([]),
+    ]);
 
-      results = [...results, ...stockResults, ...indianResults];
-    }
-
-    if (type === "CRYPTO" || type === "ALL") {
-      const cryptoResults = POPULAR_CRYPTO.filter(
-        (c) =>
-          c.symbol.toLowerCase().includes(lowerQuery) ||
-          c.name.toLowerCase().includes(lowerQuery)
-      ).map((c) => ({ ...c, assetType: "CRYPTO" }));
-      results = [...results, ...cryptoResults];
-    }
-
-    return results.slice(0, 12);
+    const results = [...usStockResults, ...indianResults, ...cryptoResults];
+    return results.slice(0, 20);
   } catch (error) {
+    console.error("[searchAssets]", error.message);
     return [];
   }
 }
+
